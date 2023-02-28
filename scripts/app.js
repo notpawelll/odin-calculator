@@ -163,7 +163,7 @@ function stateTransition(currentState, transitionType) {
       nextState = "allClear";
       break;
   }
-  console.log(`${currentState} ---(${transitionType})--> ${nextState}`);
+  console.log(`${currentState} --(${transitionType})-> ${nextState}`);
   return nextState;
 }
 
