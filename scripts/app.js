@@ -29,17 +29,28 @@ function operate(a, b, operator) {
   }
 }
 
-let accumulator = 0;
+let accumulatorInteger = 0;
+let accumulatorDecimal = false;
+let accumulatorFractional = "";
 let operandOne = 0;
 let operandTwo = 0;
 let operator = undefined;
 let currentState = "allClear";
 
-let calculatorDisplay = document.querySelector("#display");
-let digitButtons = document.querySelectorAll(".button-digit");
-let operatorButtons = document.querySelectorAll(".button-operator");
-let utilityButtons = document.querySelectorAll(".button-utility");
-let clearButton = document.querySelector("#utility-clear");
+const calculatorDisplayText = document.querySelector("#display-text");
+const digitButtons = document.querySelectorAll(".button-digit");
+const operatorButtons = document.querySelectorAll(".button-operator");
+const utilityButtons = document.querySelectorAll(".button-utility");
+const clearButton = document.querySelector("#utility-clear");
+
+const calculatorDisplayContainer = document.querySelector("#display");
+const maxDisplayWidth = calculatorDisplayContainer.clientWidth - 
+  parseInt(getComputedStyle(calculatorDisplayContainer).paddingLeft) -
+  parseInt(getComputedStyle(calculatorDisplayContainer).paddingRight);
+
+const maxDisplayFontSize = parseInt(getComputedStyle(calculatorDisplayText).fontSize);
+
+const numMaxDigits = 9;
 
 function stateTransition(currentState, transitionType) {
   let nextState;
@@ -90,6 +101,8 @@ function stateTransition(currentState, transitionType) {
           nextState = "operandOne";
           break;
         case "operator":
+          updateOperand();
+          resetAccumulator();
           nextState = "operator";
           break;
         default:
@@ -104,6 +117,7 @@ function stateTransition(currentState, transitionType) {
           nextState = "operator";
           break;
         case "digit":
+          updateOperand();
           nextState = "operandTwo";
           break;
         case "equals":
@@ -130,6 +144,8 @@ function stateTransition(currentState, transitionType) {
           nextState = "operandTwo";
           break;
         case "equals":
+          updateOperand();
+          resetAccumulator();
           nextState = "result";
           break;
         default:
@@ -150,6 +166,8 @@ function stateTransition(currentState, transitionType) {
           nextState = "result";
           break;
         case "operator":
+          updateOperand();
+          resetAccumulator();
           nextState = "operator";
           break;
         default:
@@ -167,8 +185,33 @@ function stateTransition(currentState, transitionType) {
   return nextState;
 }
 
-function updateDisplay(newValue) {
-  calculatorDisplay.textContent = newValue;
+function decreaseFontSize(textElement, maxTextWidth) {
+  while (textElement.clientWidth > maxTextWidth) {
+    textElement.style.fontSize = `${parseInt(getComputedStyle(textElement).fontSize) - 1}px`;
+  }
+}
+
+function increaseFontSize(textElement, maxFontSize) {
+  while (parseInt(getComputedStyle(textElement).fontSize) < maxFontSize) {
+    textElement.style.fontSize = `${parseInt(getComputedStyle(textElement).fontSize) + 1}px`;
+  }
+}
+
+function resizeFont(textElement, maxTextWidth=maxDisplayWidth, maxFontSize=maxDisplayFontSize) {
+  if (textElement.clientWidth > maxTextWidth) {
+    decreaseFontSize(textElement, maxTextWidth)
+  }
+  else if (parseInt(getComputedStyle(textElement).fontSize) < maxFontSize) {
+    increaseFontSize(textElement, maxFontSize);
+  }
+}
+
+function updateDisplay(integer, decimal, fractional) {
+  calculatorDisplayText.textContent = integer.toLocaleString()
+  if (decimal) {
+    calculatorDisplayText.textContent += `.${fractional}`;
+  }
+  resizeFont(calculatorDisplayText, maxDisplayWidth, maxDisplayFontSize);
 }
 
 function updateClearButtonText(currentState) {
@@ -196,19 +239,41 @@ function appendToOperand(operandValue, digitValue) {
   return operandValue === 0 ? digitValue : Number(`${operandValue}${digitValue}`);
 }
 
-function pressDigitButton(digitValue) {
-  currentState = stateTransition(currentState, "digit");
-  switch (currentState) {
-    case "operandOne":
-      operandOne = appendToOperand(operandOne, digitValue)
-      updateDisplay(operandOne);
-      break;
-    case "operandTwo":
-      operandTwo = appendToOperand(operandTwo, digitValue);
-      updateDisplay(operandTwo);
-      break;
-    default:
-      break;
+// https://stackoverflow.com/questions/14879691/get-number-of-digits-with-javascript
+function numDigits(x) {
+  if (typeof x === "string") return x.length;
+  x = Number(String(x).replace(/[^0-9]/g, ''));
+  return Math.max(Math.floor(Math.log10(Math.abs(x))), 0) + 1;
+}
+
+function appendToInteger(base, digit) {
+  return base === 0 ? digit : Number(`${base}${digit}`);
+}
+
+function appendToFractional(base, digit) {
+  return `${base}${digit}`;
+}
+
+function splitValue(value) {
+  let valueString = value.toString();
+  let decimalIndex = valueString.indexOf(".");
+  if (decimalIndex === -1) {
+    return [value, false, ""];
+  }
+  else {
+    let valueInteger = Number(valueString.substring(0, decimalIndex));
+    let valueFractional = valueString.substring(decimalIndex + 1);
+
+    let fractionalDigits = numMaxDigits - numDigits(valueInteger);
+    console.log(fractionalDigits);
+    if (fractionalDigits < 0) {
+      console.log("OVERFLOW");
+      valueInteger = undefined;
+    }
+
+    valueFractional = parseFloat(`.${valueFractional}`).toFixed(fractionalDigits).substring(2).toString();
+
+    return [valueInteger, true, valueFractional];
   }
 }
 
@@ -225,11 +290,10 @@ function pressOperatorButton(operatorId) {
       break;
     case "operator-equals":
       currentState = stateTransition(currentState, "equals");
-      accumulator = operate(operandOne, operandTwo, operator);
-      console.log(`${operandOne} ${operator} ${operandTwo} = ${accumulator}`);
+      let result = operate(operandOne, operandTwo, operator);
+      let [accumulatorInteger, accumulatorDecimal, accumulatorFractional] = splitValue(result);
       highlightOperator(null);
-      updateDisplay(accumulator);
-      operandOne = accumulator;
+      updateDisplay(accumulatorInteger, accumulatorDecimal, accumulatorFractional);
       break;
     default:
       break;
@@ -272,23 +336,71 @@ function pressUtilityButton(utilityId) {
   }
 }
 
+function updateOperand() {
+  switch (currentState) {
+    case "result":
+    case "operandOne":
+      operandOne = parseFloat(`${accumulatorInteger}.${accumulatorFractional}`);
+      break;
+    case "operandTwo":
+      operandTwo = parseFloat(`${accumulatorInteger}.${accumulatorFractional}`);
+      break;
+    default:
+      break;
+  }
+  console.log(`update operand ${operandOne} ${operandTwo}`)
+}
+
+function resetAccumulator() {
+  accumulatorInteger = 0;
+  accumulatorDecimal = false;
+  accumulatorFractional = "";
+}
+
+function pressDigitButton(digitValue) {
+  if (accumulatorDecimal && (numDigits(accumulatorInteger) + numDigits(accumulatorFractional) < numMaxDigits)) {
+    accumulatorFractional = appendToFractional(accumulatorFractional, digitValue);
+    updateDisplay(accumulatorInteger, accumulatorDecimal, accumulatorFractional);
+  }
+  else if (!accumulatorDecimal && numDigits(accumulatorInteger) < numMaxDigits) {
+    accumulatorInteger = appendToInteger(accumulatorInteger, digitValue);
+    updateDisplay(accumulatorInteger, accumulatorDecimal, accumulatorFractional);
+  }
+}
+
+function pressPeriodButton() {
+  if (!accumulatorDecimal && numDigits(accumulatorInteger) < numMaxDigits) {
+    accumulatorDecimal = true;
+    updateDisplay(accumulatorInteger, accumulatorDecimal, accumulatorFractional);
+  }
+}
+
 digitButtons.forEach((digitButton) => {
   digitButton.addEventListener("click", e => {
-    pressDigitButton(Number(digitButton.textContent));
-    updateClearButtonText(currentState);
+    currentState = stateTransition(currentState, "digit");
+    if (e.target.id === "digit-period") {
+      pressPeriodButton();
+    }
+    else {
+      pressDigitButton(Number(digitButton.textContent));
+    }
+    updateOperand();
+    console.log(`op1: ${operandOne} ; op2: ${operandTwo}`);
   });
 });
 
 operatorButtons.forEach((operatorButton) => {
   operatorButton.addEventListener("click", e => {
+    currentState = stateTransition(currentState, "operator");
     pressOperatorButton(e.target.id);
-    updateClearButtonText(currentState);
+    // updateClearButtonText(currentState);
   });
 });
 
 utilityButtons.forEach((utilityButton) => {
   utilityButton.addEventListener("click", e => {
+    currentState = stateTransition(currentState, "utility");
     pressUtilityButton(e.target.id);
-    updateClearButtonText(currentState);
+    // updateClearButtonText(currentState);
   });
 });

@@ -14,14 +14,26 @@
 }
 
 #display {
-  color: white;
+  /* color: white;
   display: block;
   font-size: 48px;
   height: 64px;
   background-color: rgb(64, 64, 64);
   text-align: right;
   line-height: 64px;
+  padding: 0px 16px; */
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  background-color: rgb(64, 64, 64);
+  height: 64px;
   padding: 0px 16px;
+}
+
+#display-text {
+  color: white;
+  font-size: 48px;
+  text-align: right;
 }
 
 .calculator-row {
