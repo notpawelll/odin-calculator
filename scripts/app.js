@@ -101,8 +101,6 @@ function stateTransition(currentState, transitionType) {
           nextState = "operandOne";
           break;
         case "operator":
-          updateOperand();
-          resetAccumulator();
           nextState = "operator";
           break;
         default:
@@ -117,7 +115,6 @@ function stateTransition(currentState, transitionType) {
           nextState = "operator";
           break;
         case "digit":
-          updateOperand();
           nextState = "operandTwo";
           break;
         case "equals":
@@ -144,8 +141,6 @@ function stateTransition(currentState, transitionType) {
           nextState = "operandTwo";
           break;
         case "equals":
-          updateOperand();
-          resetAccumulator();
           nextState = "result";
           break;
         default:
@@ -166,8 +161,6 @@ function stateTransition(currentState, transitionType) {
           nextState = "result";
           break;
         case "operator":
-          updateOperand();
-          resetAccumulator();
           nextState = "operator";
           break;
         default:
@@ -198,6 +191,7 @@ function increaseFontSize(textElement, maxFontSize) {
 }
 
 function resizeFont(textElement, maxTextWidth=maxDisplayWidth, maxFontSize=maxDisplayFontSize) {
+  textElement.style.fontSize = `${maxFontSize}px`;
   if (textElement.clientWidth > maxTextWidth) {
     decreaseFontSize(textElement, maxTextWidth)
   }
@@ -263,16 +257,13 @@ function splitValue(value) {
   else {
     let valueInteger = Number(valueString.substring(0, decimalIndex));
     let valueFractional = valueString.substring(decimalIndex + 1);
-
     let fractionalDigits = numMaxDigits - numDigits(valueInteger);
     console.log(fractionalDigits);
     if (fractionalDigits < 0) {
       console.log("OVERFLOW");
       valueInteger = undefined;
     }
-
-    valueFractional = parseFloat(`.${valueFractional}`).toFixed(fractionalDigits).substring(2).toString();
-
+    valueFractional = parseFloat(parseFloat(`.${valueFractional}`).toFixed(fractionalDigits)).toString().substring(2);
     return [valueInteger, true, valueFractional];
   }
 }
@@ -285,7 +276,7 @@ function pressOperatorButton(operatorId) {
     case "operator-plus":
       currentState = stateTransition(currentState, "operator");
       operator = operatorId;
-      operandTwo = 0;
+      resetAccumulator();
       highlightOperator(operatorId);
       break;
     case "operator-equals":
@@ -341,14 +332,15 @@ function updateOperand() {
     case "result":
     case "operandOne":
       operandOne = parseFloat(`${accumulatorInteger}.${accumulatorFractional}`);
+      console.log(`operandOne: ${operandOne}`);
       break;
     case "operandTwo":
       operandTwo = parseFloat(`${accumulatorInteger}.${accumulatorFractional}`);
+      console.log(`operandTwo: ${operandTwo}`);
       break;
     default:
       break;
   }
-  console.log(`update operand ${operandOne} ${operandTwo}`)
 }
 
 function resetAccumulator() {
@@ -366,6 +358,7 @@ function pressDigitButton(digitValue) {
     accumulatorInteger = appendToInteger(accumulatorInteger, digitValue);
     updateDisplay(accumulatorInteger, accumulatorDecimal, accumulatorFractional);
   }
+  updateOperand();
 }
 
 function pressPeriodButton() {
@@ -373,6 +366,7 @@ function pressPeriodButton() {
     accumulatorDecimal = true;
     updateDisplay(accumulatorInteger, accumulatorDecimal, accumulatorFractional);
   }
+  updateOperand();
 }
 
 digitButtons.forEach((digitButton) => {
@@ -384,8 +378,8 @@ digitButtons.forEach((digitButton) => {
     else {
       pressDigitButton(Number(digitButton.textContent));
     }
-    updateOperand();
-    console.log(`op1: ${operandOne} ; op2: ${operandTwo}`);
+    // updateOperand();
+    // console.log(`op1: ${operandOne} ; op2: ${operandTwo}`);
   });
 });
 
