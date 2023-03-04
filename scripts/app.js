@@ -175,6 +175,7 @@ function stateTransition(currentState, transitionType) {
       break;
   }
   console.log(`${currentState} --(${transitionType})-> ${nextState}`);
+  console.log(`${operandOne} ${operator} ${operandTwo}`);
   return nextState;
 }
 
@@ -282,8 +283,9 @@ function pressOperatorButton(operatorId) {
     case "operator-equals":
       currentState = stateTransition(currentState, "equals");
       let result = operate(operandOne, operandTwo, operator);
-      let [accumulatorInteger, accumulatorDecimal, accumulatorFractional] = splitValue(result);
+      [accumulatorInteger, accumulatorDecimal, accumulatorFractional] = splitValue(result);
       highlightOperator(null);
+      updateOperand();
       updateDisplay(accumulatorInteger, accumulatorDecimal, accumulatorFractional);
       break;
     default:
