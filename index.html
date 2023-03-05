@@ -6,14 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>calculator</title>
     <link rel="stylesheet" href="./styles/style.css">
-    <script src="./scripts/app.js" defer></script>
+    <script type="text/javascript" src="./scripts/app.js" defer></script>
   </head>
   <body>
     <h1>calculator</h1>
     <div id="body">
       <div id="calculator-body" >
-        <div id="display" class="calculator-row">
-          <div id="display-text">0</div>
+        <div id="display-history" class="calculator-row">
+          <div id="display-history-text"></div>
+        </div>
+        <div id="display-accumulator" class="calculator-row">
+          <div id="display-accumulator-text">0</div>
         </div>
         <div class="calculator-row">
           <div id="utility-clear" class="button-general button-utility">AC</div>
@@ -41,7 +44,7 @@
         </div>
         <div class="calculator-row">
           <div id="digit-0" class="button-general button-wide button-digit">0</div>
-          <div id="digit-period" class="button-general button-digit">&period;</div>
+          <div id="digit-decimal" class="button-general button-digit">&period;</div>
           <div id="operator-equals" class="button-general button-operator">&equals;</div>
         </div>
       </div>

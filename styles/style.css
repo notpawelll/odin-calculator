@@ -13,15 +13,22 @@
   width: 256px;
 }
 
-#display {
-  /* color: white;
-  display: block;
-  font-size: 48px;
-  height: 64px;
+#display-history {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
   background-color: rgb(64, 64, 64);
-  text-align: right;
-  line-height: 64px;
-  padding: 0px 16px; */
+  height: 32px;
+  padding: 0px 16px;
+}
+
+#display-history-text {
+  color: darkgrey;
+  font-size: 16px;
+  text-align: left;
+}
+
+#display-accumulator {
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -30,7 +37,7 @@
   padding: 0px 16px;
 }
 
-#display-text {
+#display-accumulator-text {
   color: white;
   font-size: 48px;
   text-align: right;
