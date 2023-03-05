@@ -224,10 +224,12 @@ function inputClearUtility() {
 }
 
 function inputPercentUtiltiy() {
+  accumulator = `${parseFloat(accumulator)/100}`;
   return state;
 }
 
 function inputPlusMinusUtility() {
+  accumulator = `${-1*parseFloat(accumulator)}`;
   return state;
 }
 
