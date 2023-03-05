@@ -175,7 +175,6 @@ function stateTransition(currentState, transitionType) {
       break;
   }
   console.log(`${currentState} --(${transitionType})-> ${nextState}`);
-  console.log(`${operandOne} ${operator} ${operandTwo}`);
   return nextState;
 }
 
@@ -201,10 +200,10 @@ function resizeFont(textElement, maxTextWidth=maxDisplayWidth, maxFontSize=maxDi
   }
 }
 
-function updateDisplay(integer, decimal, fractional) {
-  calculatorDisplayText.textContent = integer.toLocaleString()
-  if (decimal) {
-    calculatorDisplayText.textContent += `.${fractional}`;
+function updateDisplay() {
+  calculatorDisplayText.textContent = accumulatorInteger.toLocaleString()
+  if (accumulatorDecimal) {
+    calculatorDisplayText.textContent += `.${accumulatorFractional}`;
   }
   resizeFont(calculatorDisplayText, maxDisplayWidth, maxDisplayFontSize);
 }
@@ -253,13 +252,15 @@ function splitValue(value) {
   let valueString = value.toString();
   let decimalIndex = valueString.indexOf(".");
   if (decimalIndex === -1) {
+    if (numDigits(value) > numMaxDigits) {
+      console.log("OVERFLOW!");
+    }
     return [value, false, ""];
   }
   else {
     let valueInteger = Number(valueString.substring(0, decimalIndex));
     let valueFractional = valueString.substring(decimalIndex + 1);
     let fractionalDigits = numMaxDigits - numDigits(valueInteger);
-    console.log(fractionalDigits);
     if (fractionalDigits < 0) {
       console.log("OVERFLOW");
       valueInteger = undefined;
@@ -286,7 +287,7 @@ function pressOperatorButton(operatorId) {
       [accumulatorInteger, accumulatorDecimal, accumulatorFractional] = splitValue(result);
       highlightOperator(null);
       updateOperand();
-      updateDisplay(accumulatorInteger, accumulatorDecimal, accumulatorFractional);
+      updateDisplay();
       break;
     default:
       break;
@@ -296,30 +297,29 @@ function pressOperatorButton(operatorId) {
 function pressUtilityButton(utilityId) {
   switch (utilityId) {
     case "utility-clear":
-      currentState = stateTransition(currentState, "clear");
       switch (currentState) {
         case "clear":
-          operandOne = operandTwo;
-          operandTwo = 0;
-          accumulator = 0;
+          updateOperand();
+          resetAccumulator();
           highlightOperator(operator);
-          updateDisplay(operandTwo);
+          updateDisplay();
           break;
         case "allClear":
           operandOne = 0;
           operandTwo = 0;
           operator = undefined;
           accumulator = 0;
+          resetAccumulator();
           highlightOperator(null);
-          updateDisplay(operandOne);
+          updateDisplay();
           break;
         case "operandOne":
           operandOne = 0;
-          updateDisplay(operandOne);
+          updateDisplay();
           break;
         case "operator":
           operandTwo = 0;
-          updateDisplay(operandTwo);
+          updateDisplay();
         default:
           break;
       }
@@ -331,18 +331,22 @@ function pressUtilityButton(utilityId) {
 
 function updateOperand() {
   switch (currentState) {
-    case "result":
-    case "operandOne":
-      operandOne = parseFloat(`${accumulatorInteger}.${accumulatorFractional}`);
-      console.log(`operandOne: ${operandOne}`);
+    case "allClear":
+      operandOne = 0;
+      operandTwo = 0;
       break;
+    case "operandOne":
+    case "result":
+      operandOne = parseFloat(`${accumulatorInteger}.${accumulatorFractional}`);
+      break;
+    case "clear":
     case "operandTwo":
       operandTwo = parseFloat(`${accumulatorInteger}.${accumulatorFractional}`);
-      console.log(`operandTwo: ${operandTwo}`);
       break;
     default:
       break;
   }
+  console.log(`op1: ${operandOne} ; op2: ${operandTwo}`);
 }
 
 function resetAccumulator() {
@@ -354,11 +358,11 @@ function resetAccumulator() {
 function pressDigitButton(digitValue) {
   if (accumulatorDecimal && (numDigits(accumulatorInteger) + numDigits(accumulatorFractional) < numMaxDigits)) {
     accumulatorFractional = appendToFractional(accumulatorFractional, digitValue);
-    updateDisplay(accumulatorInteger, accumulatorDecimal, accumulatorFractional);
+    updateDisplay();
   }
   else if (!accumulatorDecimal && numDigits(accumulatorInteger) < numMaxDigits) {
     accumulatorInteger = appendToInteger(accumulatorInteger, digitValue);
-    updateDisplay(accumulatorInteger, accumulatorDecimal, accumulatorFractional);
+    updateDisplay();
   }
   updateOperand();
 }
@@ -366,7 +370,7 @@ function pressDigitButton(digitValue) {
 function pressPeriodButton() {
   if (!accumulatorDecimal && numDigits(accumulatorInteger) < numMaxDigits) {
     accumulatorDecimal = true;
-    updateDisplay(accumulatorInteger, accumulatorDecimal, accumulatorFractional);
+    updateDisplay();
   }
   updateOperand();
 }
@@ -380,8 +384,7 @@ digitButtons.forEach((digitButton) => {
     else {
       pressDigitButton(Number(digitButton.textContent));
     }
-    // updateOperand();
-    // console.log(`op1: ${operandOne} ; op2: ${operandTwo}`);
+    console.log(`${operandOne} ${operator} ${operandTwo}`);
   });
 });
 
@@ -389,14 +392,16 @@ operatorButtons.forEach((operatorButton) => {
   operatorButton.addEventListener("click", e => {
     currentState = stateTransition(currentState, "operator");
     pressOperatorButton(e.target.id);
-    // updateClearButtonText(currentState);
+    updateClearButtonText(currentState);
+    console.log(`${operandOne} ${operator} ${operandTwo}`);
   });
 });
 
 utilityButtons.forEach((utilityButton) => {
   utilityButton.addEventListener("click", e => {
-    currentState = stateTransition(currentState, "utility");
+    currentState = stateTransition(currentState, "clear");
     pressUtilityButton(e.target.id);
-    // updateClearButtonText(currentState);
+    updateClearButtonText(currentState);
+    console.log(`${operandOne} ${operator} ${operandTwo}`);
   });
 });
