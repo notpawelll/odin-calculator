@@ -57,6 +57,10 @@ function compute(operandOne, operandTwo, operator) {
   }
 }
 
+function formatFloat(value, maxNumDigits) {
+
+}
+
 function parseAccumulator() {
   return parseFloat(accumulator);
 }
@@ -73,8 +77,31 @@ function resetCalculator(
   return "allClear";
 }
 
+function decreaseFontSize(textElement, maxTextWidth) {
+  while (textElement.clientWidth > maxTextWidth) {
+    textElement.style.fontSize = `${parseInt(getComputedStyle(textElement).fontSize) - 1}px`;
+  }
+}
+
+function increaseFontSize(textElement, maxFontSize) {
+  while (parseInt(getComputedStyle(textElement).fontSize) < maxFontSize) {
+    textElement.style.fontSize = `${parseInt(getComputedStyle(textElement).fontSize) + 1}px`;
+  }
+}
+
+function resizeFont(textElement, maxTextWidth=maxAccumulatorWidth, maxFontSize=maxAccumulatorFontSize) {
+  textElement.style.fontSize = `${maxFontSize}px`;
+  if (textElement.clientWidth > maxTextWidth) {
+    decreaseFontSize(textElement, maxTextWidth)
+  }
+  else if (parseInt(getComputedStyle(textElement).fontSize) < maxFontSize) {
+    increaseFontSize(textElement, maxFontSize);
+  }
+}
+
 function updateAccumulatorDisplay() {
-  calculatorAccumulatorDisplay.textContent = accumulator.substring(0, 9);
+  calculatorAccumulatorDisplay.textContent = parseAccumulator();
+  resizeFont(calculatorAccumulatorDisplay, maxAccumulatorWidth, maxAccumulatorFontSize);
 }
 
 
@@ -122,8 +149,8 @@ function stateTransitionDigit() {
       operandTwo = parseAccumulator();
       return "operandTwo";
     case "result":
-      resetCalculator({clearAccumulator: false});
       operandOne = parseAccumulator();
+      resetCalculator({clearOperandOne: false});
       return "operandOne";
     default:
       console.error(`Attempting to transition from unsupported state "${state}". Resetting calculator...`);
@@ -255,6 +282,7 @@ digitButtons.forEach((digitButton) => {
     state = inputDigit(e.target.id);
     updateAccumulatorDisplay();
     console.log(accumulator, operandOne, operandTwo, operator, state);
+    console.log(accumulator.includes("e"));
   });
 });
 
@@ -263,6 +291,7 @@ operatorButtons.forEach((operatorButton) => {
     state = inputOperator(e.target.id);
     updateAccumulatorDisplay();
     console.log(accumulator, operandOne, operandTwo, operator, state);
+    console.log(accumulator.includes("e"));
   });
 });
 
@@ -271,5 +300,6 @@ utilityButtons.forEach((utilityButton) => {
     state = inputUtility(e.target.id);
     updateAccumulatorDisplay();
     console.log(accumulator, operandOne, operandTwo, operator, state);
+    console.log(accumulator.includes("e"));
   });
 });
