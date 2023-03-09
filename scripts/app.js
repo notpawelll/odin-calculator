@@ -36,7 +36,8 @@ const keyToDigit = {
   "7": "digit-7",
   "8": "digit-8",
   "9": "digit-9",
-  ".": "digit-decimal" }
+  ".": "digit-decimal",
+  "Backspace": "digit-backspace" }
 
 const keyToOperator = {
   "/": "operator-divide",
@@ -83,10 +84,6 @@ function compute(operandOne, operandTwo, operator) {
   }
 }
 
-function formatFloat(value, maxNumDigits) {
-
-}
-
 function parseAccumulator() {
   return parseFloat(accumulator);
 }
@@ -95,7 +92,7 @@ function resetCalculator(
   { clearAccumulator=true, clearOperandOne=true,
     clearOperandTwo=true, clearOperator=true } = {})
 {
-  console.log(clearAccumulator, clearOperandOne, clearOperandTwo, clearOperator);
+  // console.log(clearAccumulator, clearOperandOne, clearOperandTwo, clearOperator);
   if (clearAccumulator) accumulator = "0";
   if (clearOperandOne) operandOne = undefined;
   if (clearOperandTwo) operandTwo = undefined;
@@ -155,7 +152,7 @@ function parseDigitId(digitId) {
     return [undefined, undefined];
 
   let [prefix, id] = splitId;
-  if (id === "decimal")
+  if (id === "decimal" || id == "backspace")
     return splitId;
   else {
     let integerId = parseInt(id);
@@ -172,6 +169,12 @@ function numDigits(x) {
 
 function inputDecimalDigit() {
   accumulator = accumulator.includes(".") ? accumulator : `${accumulator}.`;
+}
+
+function inputBackspaceDigit() {
+  console.log(accumulator);
+  if (accumulator.length > 1) accumulator = accumulator.substring(0, accumulator.length - 1);
+  else if (accumulator.length == 1) accumulator = "0";
 }
 
 function inputIntegerDigit(integer) {
@@ -209,8 +212,10 @@ function inputDigit(digitId) {
     if (state === "result") {
       operandOne = parseAccumulator();
       resetCalculator({clearOperandOne: false});
-      if (id === "decimal")
+      if (id === "decimal" || id === "backspace")
         inputDecimalDigit();
+      else if (id == "backspace")
+        inputBackspaceDigit();
       else
         inputIntegerDigit(id);
       
@@ -219,6 +224,8 @@ function inputDigit(digitId) {
     else {
       if (id === "decimal")
         inputDecimalDigit();
+      else if (id === "backspace")
+        inputBackspaceDigit();
       else
         inputIntegerDigit(id);
 
@@ -353,7 +360,7 @@ digitButtons.forEach((digitButton) => {
   digitButton.addEventListener("click", e => {
     state = inputDigit(e.target.id);
     updateCalculatorDisplay(accumulator);
-    console.log(accumulator, operandOne, operandTwo, operator, state);
+    // console.log(accumulator, operandOne, operandTwo, operator, state);
   });
 });
 
@@ -361,7 +368,7 @@ operatorButtons.forEach((operatorButton) => {
   operatorButton.addEventListener("click", e => {
     state = inputOperator(e.target.id);
     updateCalculatorDisplay(accumulator);
-    console.log(accumulator, operandOne, operandTwo, operator, state);
+    // console.log(accumulator, operandOne, operandTwo, operator, state);
   });
 });
 
@@ -369,7 +376,7 @@ utilityButtons.forEach((utilityButton) => {
   utilityButton.addEventListener("click", e => {
     state = inputUtility(e.target.id);
     updateCalculatorDisplay(accumulator);
-    console.log(accumulator, operandOne, operandTwo, operator, state);
+    // console.log(accumulator, operandOne, operandTwo, operator, state);
   });
 });
 
@@ -390,6 +397,6 @@ document.onkeydown = function(e) {
     state = inputUtility(utilityKey);
     updateCalculatorDisplay(accumulator);
   }
-  console.log(accumulator, operandOne, operandTwo, operator, state);
-  console.log(e.key);
+  // console.log(accumulator, operandOne, operandTwo, operator, state);
+  // console.log(e.key);
 }
