@@ -25,6 +25,32 @@ const maxHistoryWidth = calculatorHistoryDisplayContainer.clientWidth -
 
 const maxNumDigits = 9;
 
+const keyToDigit = {
+  "0": "digit-0",
+  "1": "digit-1",
+  "2": "digit-2",
+  "3": "digit-3",
+  "4": "digit-4",
+  "5": "digit-5",
+  "6": "digit-6",
+  "7": "digit-7",
+  "8": "digit-8",
+  "9": "digit-9",
+  ".": "digit-decimal" }
+
+const keyToOperator = {
+  "/": "operator-divide",
+  "*": "operator-times",
+  "-": "operator-minus",
+  "+": "operator-plus",
+  "Enter": "operator-equals" }
+
+const keyToUtility = {
+  "Escape": "utility-clear",
+  "^": "utility-plusminus",
+  "%": "utility-percent" }
+
+
 function divideOperands(a, b) {
   return b === 0 ? undefined : a/b;
 }
@@ -99,12 +125,22 @@ function resizeFont(textElement, maxTextWidth=maxAccumulatorWidth, maxFontSize=m
   }
 }
 
-function updateAccumulatorDisplay() {
-  calculatorAccumulatorDisplay.textContent = parseAccumulator();
-  resizeFont(calculatorAccumulatorDisplay, maxAccumulatorWidth, maxAccumulatorFontSize);
+function formatValue(value) {
+  let [integer, fractional] = value.split(".");
+  let formattedValue = `${parseFloat(integer).toLocaleString()}`
+  if (fractional !== undefined) formattedValue += `.${fractional}`;
+  return formattedValue;
 }
 
+// function updateAccumulatorDisplay() {
+//   calculatorAccumulatorDisplay.textContent = formatValue(accumulator);
+//   resizeFont(calculatorAccumulatorDisplay, maxAccumulatorWidth, maxAccumulatorFontSize);
+// }
 
+function updateCalculatorDisplay(value) {
+  calculatorAccumulatorDisplay.textContent = formatValue(value.toString());
+  resizeFont(calculatorAccumulatorDisplay, maxAccumulatorWidth, maxAccumulatorFontSize);
+}
 
 
 // digit inputs
@@ -130,11 +166,16 @@ function parseDigitId(digitId) {
   }
 }
 
+function numDigits(x) {
+  return x.toString().replace(".", "").length;
+}
+
 function inputDecimalDigit() {
   accumulator = accumulator.includes(".") ? accumulator : `${accumulator}.`;
 }
 
 function inputIntegerDigit(integer) {
+  if (numDigits(accumulator) >= maxNumDigits) return accumulator;
   accumulator = accumulator === "0" ? `${integer}` : `${accumulator}${integer}`;
 }
 
@@ -165,12 +206,24 @@ function inputDigit(digitId) {
     return resetCalculator();
   }
   else {
-    if (id === "decimal")
-      inputDecimalDigit();
-    else
-      inputIntegerDigit(id);
+    if (state === "result") {
+      operandOne = parseAccumulator();
+      resetCalculator({clearOperandOne: false});
+      if (id === "decimal")
+        inputDecimalDigit();
+      else
+        inputIntegerDigit(id);
+      
+      return "operandOne";
+    }
+    else {
+      if (id === "decimal")
+        inputDecimalDigit();
+      else
+        inputIntegerDigit(id);
 
-    return stateTransitionDigit();
+      return stateTransitionDigit();
+    }
   }
 }
 // digit inputs
@@ -179,6 +232,7 @@ function inputDigit(digitId) {
 
 // operator inputs
 function inputEqualsOperator() {
+  highlightOperator(null);
   switch (state) {
     case "allClear":
       return resetCalculator();
@@ -204,27 +258,44 @@ function inputEqualsOperator() {
 
 function inputMdasOperator(operatorId) {
   switch (state) {
+    case "allClear":
+      operandOne = 0;
+      operator = operatorId;
+      highlightOperator(operatorId);
+      return "operator";
     case "operandOne":
       operandOne = parseAccumulator();
       accumulator = "0";
-    case "allClear":
     case "operator":
       operator = operatorId;
+      highlightOperator(operatorId);
       return "operator";
     case "operandTwo":
       accumulator = `${compute(operandOne, operandTwo, operator)}`;
       operandOne = parseAccumulator();
       operator = operatorId;
+      highlightOperator(operatorId);
+      accumulator = "0";
       return "operator";
     case "result":
       operandOne = parseAccumulator();
       operator = operatorId;
+      highlightOperator(operatorId);
       resetCalculator({clearOperandOne: false, clearOperator: false});
       return "operator";
     default:
       console.error(`In unknown state "${state}". Resetting calculator...`);
       return resetCalculator();
   }
+}
+
+function highlightOperator(operatorId) {
+  operatorButtons.forEach((operatorButton) => {
+    operatorButton.classList.remove("button-operator-active");
+    if (operatorButton.id === operatorId) {
+      operatorButton.classList.add("button-operator-active");
+    }
+  });
 }
 
 function inputOperator(operatorId) {
@@ -250,7 +321,7 @@ function inputClearUtility() {
   return resetCalculator();
 }
 
-function inputPercentUtiltiy() {
+function inputPercentUtility() {
   accumulator = `${parseFloat(accumulator)/100}`;
   return state;
 }
@@ -263,9 +334,10 @@ function inputPlusMinusUtility() {
 function inputUtility(utilityId) {
   switch (utilityId) {
     case "utility-clear":
+      highlightOperator(null);
       return inputClearUtility();
     case "utility-percent":
-      return inputPercentUtiltiy();
+      return inputPercentUtility();
     case "utility-plusminus":
       return inputPlusMinusUtility();
     default:
@@ -280,26 +352,44 @@ function inputUtility(utilityId) {
 digitButtons.forEach((digitButton) => {
   digitButton.addEventListener("click", e => {
     state = inputDigit(e.target.id);
-    updateAccumulatorDisplay();
+    updateCalculatorDisplay(accumulator);
     console.log(accumulator, operandOne, operandTwo, operator, state);
-    console.log(accumulator.includes("e"));
   });
 });
 
 operatorButtons.forEach((operatorButton) => {
   operatorButton.addEventListener("click", e => {
     state = inputOperator(e.target.id);
-    updateAccumulatorDisplay();
+    updateCalculatorDisplay(accumulator);
     console.log(accumulator, operandOne, operandTwo, operator, state);
-    console.log(accumulator.includes("e"));
   });
 });
 
 utilityButtons.forEach((utilityButton) => {
   utilityButton.addEventListener("click", e => {
     state = inputUtility(e.target.id);
-    updateAccumulatorDisplay();
+    updateCalculatorDisplay(accumulator);
     console.log(accumulator, operandOne, operandTwo, operator, state);
-    console.log(accumulator.includes("e"));
   });
 });
+
+
+document.onkeydown = function(e) {
+  let digitKey = keyToDigit[e.key];
+  let operatorKey = keyToOperator[e.key];
+  let utilityKey = keyToUtility[e.key];
+  if (digitKey !== undefined) {
+    state = inputDigit(digitKey);
+    updateCalculatorDisplay(accumulator);
+  }
+  else if (operatorKey !== undefined) {
+    state = inputOperator(operatorKey);
+    updateCalculatorDisplay(accumulator);
+  }
+  else if (utilityKey !== undefined) {
+    state = inputUtility(utilityKey);
+    updateCalculatorDisplay(accumulator);
+  }
+  console.log(accumulator, operandOne, operandTwo, operator, state);
+  console.log(e.key);
+}
